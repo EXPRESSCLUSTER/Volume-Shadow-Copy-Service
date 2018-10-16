@@ -1,4 +1,4 @@
-# Volume-Shadow-Copy-Service
+# Enable Shadow Copies with EXPRESSCLUSTER
 ## Index
 * [Disclaimer](#disclaimer)
 * [About This Page](#about-this-page)
