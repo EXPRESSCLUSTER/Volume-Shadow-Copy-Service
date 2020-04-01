@@ -9,7 +9,7 @@ It was found that the snapshots could be referenced after the failover if the da
 
 ## System configuration
 
-The configuration is "2 nodes data-mirroring type cluster".  
+The configuration is "2 nodes data-mirroring type cluster" has tested. shared-disk and hybrid-disk type can be tested (expecting the same way is applicable).  
 The following version of OS and EXPRESSCLUSTER are evaluated.
 
   - Windows Server 2012 R2 / 2016 / 2019
@@ -32,51 +32,29 @@ The following version of OS and EXPRESSCLUSTER are evaluated.
 
 ## Setup steps
 
-- Install EC on Windows
-- Configure a cluster to have MD resource
-- Obtain the *volume name* for the data partition of MD resource from both nodes 
-
-	e.x. *x:* is drive letter for the data partition of the MD resource.  
-	start the failover group on node#1. Open cmd.exe on node#1
-
-	```
-	C:\> mountvol x:\ /l
-	\\?\Volume{c348f10a-0000-0000-0000-104000000000}\
-	```
-
-	move the failover group to node#2, open cmd.exe on node#2
-
-	```
-	C:\> mountvol x:\ /l
-	\\?\Volume{ea5b5c1c-0000-0000-0000-104000000000}\
-	```
-
-
-- Add a Script Resource
-
-  Configure it to depend on the MD resource and edit start.bat as following sample
-
-	- *x:* is data-partition of the MD resource. 
-	- *\\\\?\\Volume{\*}\\* are volume-name which were obtained in above. The upper one is that of node#1 and lowere one is that of node#2
+- Prepare a cluster to have MD resource
+- Add a Script Resource and configure it to depend on the MD resource and edit *start.bat* as following sample
+  - In the sample,  *x:\\*  represents the mount point (drive letter) of the MD resource.
 
 	```
 	rem ***************************************
 	rem *              start.bat              *
 	rem ***************************************
-	
+
+	rem Check startup attributes
 	IF "%CLP_EVENT%" == "RECOVER" GOTO EXIT
 
-	mountvol x:\ /p
+	rem ***************************************
+	rem Parameter
 
-	IF "%CLP_SERVER%" == "OTHER" GOTO ON_OTHER1
-	
-	mountvol x:\ \\?\Volume{c348f10a-0000-0000-0000-104000000000}\
-	GOTO EXIT
-	
-	:ON_OTHER1
-	mountvol x:\ \\?\Volume{ea5b5c1c-0000-0000-0000-104000000000}\
-	GOTO EXIT
-	
+	rem Mount point for MD/SD/HD resrouce
+	set mnt=x:\
+	rem ***************************************
+
+	for /f "usebackq" %%i in (`mountvol %mnt% /l`) do @set volname=%%i
+	mountvol %mnt% /p
+	mountvol %mnt% %volname%
+
 	:EXIT
 	```
 
